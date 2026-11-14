@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TECHSTORE — Интернет-магазин техники</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="header">
+    <a href="#" class="logo">TECH<span>STORE</span></a>
+
+    <nav class="nav">
+      <a href="#home">Главная</a>
+      <a href="#catalog">Каталог</a>
+      <a href="#about">О нас</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="cart-button" id="open-cart">
+        🛒 Корзина <span id="cart-count">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-content">
+        <span class="hero-label">TECHSTORE — ТЕХНОЛОГИИ РЯДОМ</span>
+        <h1>Техника для<br>твоего <span>будущего.</span></h1>
+        <p>Смартфоны, компьютеры и аксессуары в одном месте.</p>
+        <a href="#catalog" class="main-button">Смотреть каталог</a>
+      </div>
+      <div class="hero-decoration">TECH</div>
+    </section>
+
+    <section class="catalog section" id="catalog">
+      <div class="section-heading">
+        <div>
+          <span class="small-label">НАШ АССОРТИМЕНТ</span>
+          <h2>Каталог товаров</h2>
+        </div>
+        <p>Выбирай то, что тебе нужно.</p>
+      </div>
+
+      <div class="catalog-tools">
+        <input
+          type="search"
+          id="search-input"
+          placeholder="🔎 Поиск товаров..."
+          aria-label="Поиск товаров"
+        >
+
+        <div class="category-filters" id="category-filters">
+          <button class="filter-button active" data-category="all">Все</button>
+          <button class="filter-button" data-category="smartphones">Смартфоны</button>
+          <button class="filter-button" data-category="computers">Компьютеры</button>
+          <button class="filter-button" data-category="accessories">Аксессуары</button>
+        </div>
+      </div>
+
+      <div class="product-grid" id="product-list"></div>
+      <p class="empty-message" id="empty-products" hidden>Товары не найдены.</p>
+    </section>
+
+    <section class="about section" id="about">
+      <span class="small-label">ПОЧЕМУ TECHSTORE?</span>
+      <h2>Технологии становятся ближе.</h2>
+      <div class="features">
+        <div class="feature">
+          <span>📱</span>
+          <h3>Современная техника</h3>
+          <p>Популярные устройства и полезные аксессуары.</p>
+        </div>
+        <div class="feature">
+          <span>🛒</span>
+          <h3>Удобный заказ</h3>
+          <p>Добавляй товары в корзину и оформляй заказ.</p>
+        </div>
+        <div class="feature">
+          <span>💬</span>
+          <h3>Связь в Telegram</h3>
+          <p>Обсуди свой заказ напрямую с продавцом.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a href="#" class="logo">TECH<span>STORE</span></a>
+    <p>© 2026 TECHSTORE. Демонстрационный интернет-магазин.</p>
+  </footer>
+
+  <!-- Корзина -->
+  <div class="overlay" id="cart-overlay">
+    <div class="modal cart-modal">
+      <button class="close-button" id="close-cart" aria-label="Закрыть">×</button>
+      <h2>Твоя корзина</h2>
+      <div id="cart-items"></div>
+
+      <div class="cart-bottom">
+        <div class="total-row">
+          <span>Итого:</span>
+          <strong id="cart-total">0 сум</strong>
+        </div>
+        <button class="main-button full-button" id="checkout-button">
+          Оформить заказ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Оформление заказа -->
+  <div class="overlay" id="checkout-overlay">
+    <div class="modal checkout-modal">
+      <button class="close-button" id="close-checkout" aria-label="Закрыть">×</button>
+      <span class="small-label">ПОСЛЕДНИЙ ШАГ</span>
+      <h2>Оформление заказа</h2>
+      <p class="modal-description">Заполни данные для связи и доставки.</p>
+
+      <form id="checkout-form">
+        <label for="customer-name">Твоё имя</label>
+        <input id="customer-name" name="name" type="text" placeholder="Например, Алекс" required minlength="2">
+
+        <label for="customer-phone">Номер телефона</label>
+        <input id="customer-phone" name="phone" type="tel" placeholder="+998 90 123 45 67" required>
+
+        <label for="customer-address">Адрес доставки</label>
+        <textarea id="customer-address" name="address" placeholder="Город, улица, дом..." required></textarea>
+
+        <label for="customer-comment">Комментарий (необязательно)</label>
+        <textarea id="customer-comment" name="comment" placeholder="Дополнительная информация"></textarea>
+
+        <div class="checkout-total">
+          <span>Сумма заказа:</span>
+          <strong id="checkout-total">0 сум</strong>
+        </div>
+
+        <button type="submit" class="main-button full-button">
+          Перейти в Telegram
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
