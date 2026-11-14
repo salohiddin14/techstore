@@ -1,396 +1,659 @@
 
-const TELEGRAM_USERNAME = "ww1nterc";
+// ==========================================
+// TECHSTORE — SUPABASE CONFIG
+// ==========================================
 
-// Товары магазина
-const products = [
-  {
-    id: 1,
-    name: "iPhone 15 Pro",
-    category: "smartphones",
-    categoryName: "Смартфоны",
-    price: 11500000,
-    image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=700"
-  },
-  {
-    id: 2,
-    name: "Samsung Galaxy S24",
-    category: "smartphones",
-    categoryName: "Смартфоны",
-    price: 9200000,
-    image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=700"
-  },
-  {
-    id: 3,
-    name: "Gaming Laptop",
-    category: "computers",
-    categoryName: "Компьютеры",
-    price: 12500000,
-    image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=700"
-  },
-  {
-    id: 4,
-    name: "Wireless Headphones",
-    category: "accessories",
-    categoryName: "Аксессуары",
-    price: 450000,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=700"
-  },
-  {
-    id: 5,
-    name: "Smart Watch",
-    category: "accessories",
-    categoryName: "Аксессуары",
-    price: 650000,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=700"
-  },
-  {
-    id: 6,
-    name: "Wireless Mouse",
-    category: "accessories",
-    categoryName: "Аксессуары",
-    price: 180000,
-    image: "https://images.unsplash.com/photo-1527814050087-3793815479db?w=700"
-  }
-];
+const SUPABASE_URL = "https://ibvwbvidcpkrmqrwmsmm.supabase.co";
+const SUPABASE_KEY = "sb_publishable_NHFXT55gi90ZqFfzZrJZHg_Gldyzbht";
 
-// Элементы страницы
-const productList = document.getElementById("product-list");
-const searchInput = document.getElementById("search-input");
-const categoryFilters = document.getElementById("category-filters");
-const emptyProducts = document.getElementById("empty-products");
-
-const cartOverlay = document.getElementById("cart-overlay");
-const checkoutOverlay = document.getElementById("checkout-overlay");
-
-const cartItems = document.getElementById("cart-items");
-const cartCount = document.getElementById("cart-count");
-const cartTotal = document.getElementById("cart-total");
-const checkoutTotal = document.getElementById("checkout-total");
-
-let selectedCategory = "all";
-let cart = loadCart();
-
-// Форматирование цены
-function formatPrice(price) {
-  return new Intl.NumberFormat("ru-RU").format(price) + " сум";
+if (!window.supabase) {
+  throw new Error("Supabase library не подключена. Проверь CDN в index.html");
 }
 
-// Безопасное отображение текста
-function escapeHTML(value) {
-  return String(value).replace(/[&<>"']/g, character => {
-    const symbols = {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    };
-
-    return symbols[character];
-  });
+if (
+  SUPABASE_KEY.includes("ВСТАВЬ") ||
+  !SUPABASE_KEY.startsWith("sb_publishable_") ||
+  !/^[\x00-\x7F]+$/.test(SUPABASE_KEY)
+) {
+  throw new Error("Вставь правильный Publishable Key в script.js");
 }
 
-// Сохранение корзины
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+// ==========================================
+// HELPERS
+// ==========================================
+
+const $ = (id) => document.getElementById(id);
+
+const money = (price) =>
+  Number(price || 0).toLocaleString("ru-RU") + " сум";
+
+const safe = (value) =>
+  String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
+
+function showModal(id) {
+  const modal = $(id);
+  if (modal) modal.style.display = "flex";
+}
+
+function hideModal(id) {
+  const modal = $(id);
+  if (modal) modal.style.display = "none";
+}
+
+function notify(message) {
+  alert(message);
+}
+
+// ==========================================
+// STATE
+// ==========================================
+
+let currentUser = null;
+let isAdmin = false;
+let products = [];
+let cart = JSON.parse(localStorage.getItem("techstore_cart") || "[]");
+let favorites = [];
+
 function saveCart() {
-  localStorage.setItem("techstore-cart", JSON.stringify(cart));
+  localStorage.setItem("techstore_cart", JSON.stringify(cart));
+  renderCart();
 }
 
-// Загрузка корзины
-function loadCart() {
-  try {
-    const saved = JSON.parse(localStorage.getItem("techstore-cart"));
+// ==========================================
+// AUTH
+// ==========================================
 
-    if (!Array.isArray(saved)) return [];
+async function register(email, password, name) {
+  const { data, error } = await db.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { full_name: name }
+    }
+  });
 
-    return saved.filter(item =>
-      products.some(product => product.id === item.id) &&
-      Number.isInteger(item.quantity) &&
-      item.quantity > 0
-    );
-  } catch {
-    return [];
+  if (error) throw error;
+
+  if (data.session) {
+    await updateUser();
+    return "Регистрация успешна!";
+  }
+
+  return "Проверь почту для подтверждения регистрации.";
+}
+
+async function login(email, password) {
+  const { error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) throw error;
+
+  await updateUser();
+  return "Вы успешно вошли!";
+}
+
+async function logout() {
+  const { error } = await db.auth.signOut();
+  if (error) throw error;
+
+  currentUser = null;
+  isAdmin = false;
+  favorites = [];
+  await updateUser();
+}
+
+async function updateUser() {
+  const { data } = await db.auth.getUser();
+  currentUser = data.user || null;
+
+  isAdmin = false;
+
+  if (currentUser) {
+    const { data: admin, error } = await db
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Ошибка проверки администратора:", error);
+    } else {
+      isAdmin = Boolean(admin);
+    }
+
+    await loadFavorites();
+  }
+
+  const loginButton = $("login-btn");
+  if (loginButton) {
+    loginButton.textContent = currentUser
+      ? "Выйти"
+      : "Войти";
+  }
+
+  const adminButton = $("admin-btn");
+  if (adminButton) {
+    adminButton.style.display = isAdmin ? "inline-flex" : "none";
   }
 }
 
-// Отображение товаров
+// ==========================================
+// AUTH FORM
+// ==========================================
+
+$("auth-form")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const email = $("auth-email")?.value.trim();
+  const password = $("auth-password")?.value;
+  const name = $("auth-name")?.value.trim();
+  const message = $("auth-message");
+
+  try {
+    const isRegister = $("auth-title")?.textContent
+      ?.toLowerCase().includes("регистрация");
+
+    const result = isRegister
+      ? await register(email, password, name)
+      : await login(email, password);
+
+    if (message) message.textContent = result;
+
+    await updateUser();
+  } catch (error) {
+    if (message) message.textContent = error.message;
+  }
+});
+
+$("auth-switch")?.addEventListener("click", () => {
+  const title = $("auth-title");
+  const name = $("auth-name");
+  const button = $("auth-submit");
+  const message = $("auth-message");
+
+  if (!title) return;
+
+  const registerMode = title.textContent
+    .toLowerCase().includes("регистрация");
+
+  title.textContent = registerMode ? "Вход" : "Регистрация";
+
+  if (name) name.style.display = registerMode ? "none" : "block";
+  if (button) button.textContent = registerMode ? "Войти" : "Зарегистрироваться";
+  if (message) message.textContent = "";
+});
+
+$("login-btn")?.addEventListener("click", async () => {
+  if (currentUser) {
+    if (confirm("Выйти из аккаунта?")) {
+      try {
+        await logout();
+        notify("Вы вышли из аккаунта");
+      } catch (error) {
+        notify(error.message);
+      }
+    }
+  } else if ($("auth-modal")) {
+    showModal("auth-modal");
+  } else {
+    location.href = "index.html";
+  }
+});
+
+// ==========================================
+// PRODUCTS
+// ==========================================
+
+async function loadProducts() {
+  const { data, error } = await db
+    .from("products")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Ошибка загрузки товаров:", error);
+    const container = $("products");
+    if (container) {
+      container.innerHTML = "<p>Не удалось загрузить товары.</p>";
+    }
+    return;
+  }
+
+  products = data || [];
+  renderProducts();
+}
+
 function renderProducts() {
-  const searchText = searchInput.value.toLowerCase().trim();
+  const container = $("products");
+  if (!container) return;
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchText);
+  const search = $("search")?.value.toLowerCase() || "";
+  const category = $("category-filter")?.value || "";
 
-    const matchesCategory =
-      selectedCategory === "all" ||
-      product.category === selectedCategory;
+  const filtered = products.filter((product) => {
+    const matchesSearch = product.name.toLowerCase().includes(search);
+    const matchesCategory = !category || product.category === category;
 
     return matchesSearch && matchesCategory;
   });
 
-  productList.innerHTML = filteredProducts.map(product => `
-    <article class="product-card">
-      <div class="product-image">
-        <img
-          src="${escapeHTML(product.image)}"
-          alt="${escapeHTML(product.name)}"
-          loading="lazy"
-        >
-      </div>
+  if (!filtered.length) {
+    container.innerHTML = "<p>Товары не найдены.</p>";
+    return;
+  }
 
-      <div class="product-info">
-        <span class="product-category">
-          ${escapeHTML(product.categoryName)}
-        </span>
+  container.innerHTML = filtered.map((product) => `
+    <div class="product-card">
+      <img src="${safe(product.image)}" alt="${safe(product.name)}">
+      <h3>${safe(product.name)}</h3>
+      <p>${money(product.price)}</p>
 
-        <h3>${escapeHTML(product.name)}</h3>
+      <button onclick="addToCart('${safe(product.id)}')">
+        В корзину
+      </button>
 
-        <div class="product-price">
-          ${formatPrice(product.price)}
-        </div>
+      <button onclick="toggleFavorite('${safe(product.id)}')">
+        ${favorites.includes(product.id) ? "★" : "☆"}
+      </button>
 
-        <button class="add-button" data-add="${product.id}">
-          + Добавить в корзину
-        </button>
-      </div>
-    </article>
+      <a href="product.html?id=${encodeURIComponent(product.id)}">
+        Подробнее
+      </a>
+    </div>
   `).join("");
-
-  emptyProducts.hidden = filteredProducts.length !== 0;
 }
 
-// Поиск
-searchInput.addEventListener("input", renderProducts);
+$("search")?.addEventListener("input", renderProducts);
+$("category-filter")?.addEventListener("change", renderProducts);
 
-// Фильтры категорий
-categoryFilters.addEventListener("click", event => {
-  const button = event.target.closest("[data-category]");
-
-  if (!button) return;
-
-  selectedCategory = button.dataset.category;
-
-  document.querySelectorAll(".filter-button").forEach(filter => {
-    filter.classList.remove("active");
-  });
-
-  button.classList.add("active");
-
-  renderProducts();
-});
-
-// Добавление товара
-productList.addEventListener("click", event => {
-  const button = event.target.closest("[data-add]");
-
-  if (!button) return;
-
-  addToCart(Number(button.dataset.add));
-});
+// ==========================================
+// CART
+// ==========================================
 
 function addToCart(id) {
-  const existingItem = cart.find(item => item.id === id);
+  const product = products.find((item) => item.id === id);
 
-  if (existingItem) {
-    existingItem.quantity++;
+  if (!product) return;
+
+  const existing = cart.find((item) => item.id === id);
+
+  if (existing) {
+    existing.quantity++;
   } else {
     cart.push({
-      id,
+      id: product.id,
+      name: product.name,
+      price: Number(product.price),
+      image: product.image,
       quantity: 1
     });
   }
 
   saveCart();
-  updateCart();
-
-  const product = products.find(item => item.id === id);
-  alert(`${product.name} добавлен в корзину!`);
+  notify("Товар добавлен в корзину!");
 }
-
-// Подсчёт общей суммы
-function getCartTotal() {
-  return cart.reduce((total, item) => {
-    const product = products.find(p => p.id === item.id);
-
-    return total + (product ? product.price * item.quantity : 0);
-  }, 0);
-}
-
-// Обновление корзины
-function updateCart() {
-  const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  cartCount.textContent = count;
-  cartTotal.textContent = formatPrice(getCartTotal());
-  checkoutTotal.textContent = formatPrice(getCartTotal());
-
-  if (cart.length === 0) {
-    cartItems.innerHTML = `
-      <p class="cart-empty">Твоя корзина пока пуста.</p>
-    `;
-
-    return;
-  }
-
-  cartItems.innerHTML = cart.map(item => {
-    const product = products.find(p => p.id === item.id);
-
-    if (!product) return "";
-
-    return `
-      <div class="cart-item">
-        <img src="${escapeHTML(product.image)}" alt="">
-
-        <div>
-          <h3>${escapeHTML(product.name)}</h3>
-
-          <div class="cart-item-price">
-            ${formatPrice(product.price * item.quantity)}
-          </div>
-
-          <div class="quantity-controls">
-            <button data-decrease="${product.id}">−</button>
-            <span>${item.quantity}</span>
-            <button data-increase="${product.id}">+</button>
-          </div>
-        </div>
-
-        <button
-          class="remove-button"
-          data-remove="${product.id}"
-        >
-          Удалить
-        </button>
-      </div>
-    `;
-  }).join("");
-}
-
-// Изменение количества и удаление
-cartItems.addEventListener("click", event => {
-  const increase = event.target.closest("[data-increase]");
-  const decrease = event.target.closest("[data-decrease]");
-  const remove = event.target.closest("[data-remove]");
-
-  if (increase) {
-    changeQuantity(Number(increase.dataset.increase), 1);
-  }
-
-  if (decrease) {
-    changeQuantity(Number(decrease.dataset.decrease), -1);
-  }
-
-  if (remove) {
-    const id = Number(remove.dataset.remove);
-    cart = cart.filter(item => item.id !== id);
-    saveCart();
-    updateCart();
-  }
-});
 
 function changeQuantity(id, amount) {
-  const item = cart.find(product => product.id === id);
-
+  const item = cart.find((product) => product.id === id);
   if (!item) return;
 
   item.quantity += amount;
 
   if (item.quantity <= 0) {
-    cart = cart.filter(product => product.id !== id);
+    cart = cart.filter((product) => product.id !== id);
   }
 
   saveCart();
-  updateCart();
 }
 
-// Открытие и закрытие корзины
-document.getElementById("open-cart").addEventListener("click", () => {
-  cartOverlay.classList.add("active");
+function removeFromCart(id) {
+  cart = cart.filter((item) => item.id !== id);
+  saveCart();
+}
+
+function renderCart() {
+  const container = $("cart-items");
+  const totalElement = $("cart-total");
+
+  if (!container) return;
+
+  container.innerHTML = cart.length
+    ? cart.map((item) => `
+      <div class="cart-item">
+        <span>${safe(item.name)}</span>
+        <button onclick="changeQuantity('${safe(item.id)}', -1)">−</button>
+        <span>${item.quantity}</span>
+        <button onclick="changeQuantity('${safe(item.id)}', 1)">+</button>
+        <span>${money(item.price * item.quantity)}</span>
+        <button onclick="removeFromCart('${safe(item.id)}')">×</button>
+      </div>
+    `).join("")
+    : "<p>Корзина пуста.</p>";
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  if (totalElement) totalElement.textContent = money(total);
+
+  const count = $("cart-count");
+  if (count) {
+    count.textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+  }
+}
+
+$("cart-btn")?.addEventListener("click", () => {
+  if ($("cart-modal")) showModal("cart-modal");
+  else location.href = "index.html#catalog";
 });
 
-document.getElementById("close-cart").addEventListener("click", () => {
-  cartOverlay.classList.remove("active");
-});
+// ==========================================
+// FAVORITES
+// ==========================================
 
-// Переход к оформлению заказа
-document.getElementById("checkout-button").addEventListener("click", () => {
-  if (cart.length === 0) {
-    alert("Сначала добавь товары в корзину.");
+async function loadFavorites() {
+  if (!currentUser) {
+    favorites = [];
+    renderProducts();
     return;
   }
 
-  cartOverlay.classList.remove("active");
-  checkoutOverlay.classList.add("active");
-  checkoutTotal.textContent = formatPrice(getCartTotal());
-});
+  const { data, error } = await db
+    .from("favorites")
+    .select("product_id")
+    .eq("user_id", currentUser.id);
 
-document.getElementById("close-checkout").addEventListener("click", () => {
-  checkoutOverlay.classList.remove("active");
-});
+  if (error) {
+    console.error("Ошибка избранного:", error);
+    return;
+  }
 
-// Закрытие окон при клике за пределами
-[cartOverlay, checkoutOverlay].forEach(overlay => {
-  overlay.addEventListener("click", event => {
-    if (event.target === overlay) {
-      overlay.classList.remove("active");
-    }
-  });
-});
+  favorites = (data || []).map((item) => item.product_id);
+  renderProducts();
+}
 
-// Закрытие клавишей Escape
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    cartOverlay.classList.remove("active");
-    checkoutOverlay.classList.remove("active");
+async function toggleFavorite(id) {
+  if (!currentUser) {
+    notify("Сначала войдите в аккаунт.");
+    return;
+  }
+
+  if (favorites.includes(id)) {
+    const { error } = await db
+      .from("favorites")
+      .delete()
+      .eq("user_id", currentUser.id)
+      .eq("product_id", id);
+
+    if (error) return notify(error.message);
+
+    favorites = favorites.filter((item) => item !== id);
+  } else {
+    const { error } = await db
+      .from("favorites")
+      .insert({
+        user_id: currentUser.id,
+        product_id: id
+      });
+
+    if (error) return notify(error.message);
+
+    favorites.push(id);
+  }
+
+  renderProducts();
+}
+
+$("favorites-btn")?.addEventListener("click", async () => {
+  if (!currentUser) return notify("Сначала войдите в аккаунт.");
+
+  const container = $("favorites-items");
+  if (container) {
+    const items = products.filter((item) => favorites.includes(item.id));
+
+    container.innerHTML = items.length
+      ? items.map((item) => `
+        <p>${safe(item.name)} — ${money(item.price)}</p>
+      `).join("")
+      : "<p>Избранное пусто.</p>";
+
+    showModal("favorites-modal");
   }
 });
 
-// Оформление заказа
-document.getElementById("checkout-form").addEventListener("submit", event => {
+// ==========================================
+// CHECKOUT / ORDERS
+// ==========================================
+
+$("checkout-btn")?.addEventListener("click", () => {
+  if (!currentUser) {
+    notify("Войдите в аккаунт, чтобы оформить заказ.");
+    return;
+  }
+
+  if (!cart.length) {
+    notify("Корзина пуста.");
+    return;
+  }
+
+  showModal("checkout-modal");
+});
+
+$("checkout-form")?.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  if (cart.length === 0) {
-    alert("Корзина пуста.");
-    checkoutOverlay.classList.remove("active");
+  if (!currentUser || !cart.length) return;
+
+  const customerName = $("customer-name")?.value.trim();
+  const phone = $("customer-phone")?.value.trim();
+  const address = $("customer-address")?.value.trim();
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
+
+  const { error } = await db.from("orders").insert({
+    user_id: currentUser.id,
+    customer_name: customerName,
+    phone,
+    address,
+    items: cart,
+    total,
+    status: "new"
+  });
+
+  if (error) {
+    const message = $("checkout-message");
+    if (message) message.textContent = error.message;
     return;
   }
 
-  const form = event.currentTarget;
-
-  if (!form.reportValidity()) return;
-
-  const name = form.elements.name.value.trim();
-  const phone = form.elements.phone.value.trim();
-  const address = form.elements.address.value.trim();
-  const comment = form.elements.comment.value.trim();
-
-  const orderLines = cart.map(item => {
-    const product = products.find(p => p.id === item.id);
-
-    return `${product.name} x ${item.quantity} — ${
-      formatPrice(product.price * item.quantity)
-    }`;
-  });
-
   const message = [
-    "🛒 НОВЫЙ ЗАКАЗ — TECHSTORE",
+    "Новый заказ TECHSTORE",
+    `Имя: ${customerName}`,
+    `Телефон: ${phone}`,
+    `Адрес: ${address || "Не указан"}`,
     "",
-    `👤 Имя: ${name}`,
-    `📞 Телефон: ${phone}`,
-    `📍 Адрес: ${address}`,
+    ...cart.map((item) =>
+      `${item.name} x${item.quantity} — ${money(item.price * item.quantity)}`
+    ),
     "",
-    "📦 ТОВАРЫ:",
-    ...orderLines,
-    "",
-    `💰 ИТОГО: ${formatPrice(getCartTotal())}`,
-    "",
-    `💬 Комментарий: ${comment || "Нет"}`
+    `Итого: ${money(total)}`
   ].join("\n");
 
-  const telegramURL =
-    `https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(message)}`;
+  cart = [];
+  saveCart();
+  hideModal("checkout-modal");
 
-  window.open(telegramURL, "_blank", "noopener,noreferrer");
+  window.open(
+    "https://t.me/ww1nterc?text=" + encodeURIComponent(message),
+    "_blank"
+  );
+
+  notify("Заказ сохранён! Отправь сообщение в Telegram.");
 });
 
-// Первый запуск
-renderProducts();
-updateCart();
+// ==========================================
+// ADMIN
+// ==========================================
+
+$("admin-btn")?.addEventListener("click", () => {
+  if (!currentUser) return notify("Сначала войдите.");
+  if (!isAdmin) return notify("У вас нет прав администратора.");
+
+  showModal("admin-modal");
+  renderAdminProducts();
+});
+
+$("product-form")?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  if (!isAdmin) return notify("Нет доступа.");
+
+  const product = {
+    id: crypto.randomUUID(),
+    name: $("new-name")?.value.trim(),
+    price: Number($("new-price")?.value),
+    category: $("new-category")?.value,
+    image: $("new-image")?.value.trim(),
+    description: $("new-description")?.value.trim()
+  };
+
+  if (!product.name || !product.price || !product.image) {
+    return notify("Заполни название, цену и изображение.");
+  }
+
+  const { error } = await db.from("products").insert(product);
+
+  if (error) {
+    const message = $("admin-message");
+    if (message) message.textContent = error.message;
+    return;
+  }
+
+  event.target.reset();
+  await loadProducts();
+  renderAdminProducts();
+  notify("Товар добавлен!");
+});
+
+function renderAdminProducts() {
+  const container = $("admin-products");
+  if (!container) return;
+
+  container.innerHTML = products.map((product) => `
+    <div>
+      ${safe(product.name)} — ${money(product.price)}
+      <button onclick="deleteProduct('${safe(product.id)}')">
+        Удалить
+      </button>
+    </div>
+  `).join("");
+}
+
+async function deleteProduct(id) {
+  if (!isAdmin) return notify("Нет доступа.");
+  if (!confirm("Удалить этот товар?")) return;
+
+  const { error } = await db
+    .from("products")
+    .delete()
+    .eq("id", id);
+
+  if (error) return notify(error.message);
+
+  await loadProducts();
+  renderAdminProducts();
+}
+
+// ==========================================
+// PRODUCT DETAILS
+// ==========================================
+
+async function loadProductDetail() {
+  const container = $("product-detail");
+  if (!container) return;
+
+  const id = new URLSearchParams(location.search).get("id");
+
+  if (!id) {
+    container.innerHTML = "<p>Товар не указан.</p>";
+    return;
+  }
+
+  const { data, error } = await db
+    .from("products")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) {
+    container.innerHTML = "<p>Товар не найден.</p>";
+    return;
+  }
+
+  container.innerHTML = `
+    <img src="${safe(data.image)}" alt="${safe(data.name)}">
+    <h1>${safe(data.name)}</h1>
+    <h2>${money(data.price)}</h2>
+    <p>${safe(data.description || "")}</p>
+    <button id="detail-add-cart">В корзину</button>
+  `;
+
+  $("detail-add-cart")?.addEventListener("click", () => {
+    const existing = cart.find((item) => item.id === data.id);
+
+    if (existing) existing.quantity++;
+    else cart.push({
+      id: data.id,
+      name: data.name,
+      price: Number(data.price),
+      image: data.image,
+      quantity: 1
+    });
+
+    saveCart();
+    notify("Добавлено в корзину!");
+  });
+}
+
+// ==========================================
+// CLOSE MODALS
+// ==========================================
+
+document.querySelectorAll("[data-close]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const modal = button.closest(".modal");
+    if (modal) modal.style.display = "none";
+  });
+});
+
+// ==========================================
+// START
+// ==========================================
+
+async function startApp() {
+  await updateUser();
+  await loadProducts();
+  await loadProductDetail();
+  renderCart();
+}
+
+startApp().catch((error) => {
+  console.error("Ошибка запуска TECHSTORE:", error);
+});
