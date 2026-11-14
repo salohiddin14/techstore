@@ -4,149 +4,306 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TECHSTORE — Интернет-магазин техники</title>
+  <meta name="theme-color" content="#100d18">
+  <title>TECHSTORE — Магазин техники</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
 
+  <!-- HEADER -->
   <header class="header">
-    <a href="#" class="logo">TECH<span>STORE</span></a>
+    <div class="container header-inner">
 
-    <nav class="nav">
-      <a href="#home">Главная</a>
-      <a href="#catalog">Каталог</a>
-      <a href="#about">О нас</a>
-    </nav>
+      <a href="index.html" class="logo">
+        TECH<span>STORE</span>
+      </a>
 
-    <div class="header-actions">
-      <button class="cart-button" id="open-cart">
-        🛒 Корзина <span id="cart-count">0</span>
-      </button>
+      <nav class="nav">
+        <a href="#home">Главная</a>
+        <a href="#catalog">Каталог</a>
+        <a href="#about">О нас</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="login-btn" class="btn">
+          Войти
+        </button>
+
+        <button id="favorites-btn" class="btn">
+          Избранное
+        </button>
+
+        <button id="cart-btn" class="btn">
+          Корзина (<span id="cart-count">0</span>)
+        </button>
+
+        <button
+          id="admin-btn"
+          class="btn admin-btn"
+          style="display:none"
+        >
+          Админ-панель
+        </button>
+      </div>
+
     </div>
   </header>
 
-  <main id="home">
-    <section class="hero">
-      <div class="hero-content">
-        <span class="hero-label">TECHSTORE — ТЕХНОЛОГИИ РЯДОМ</span>
-        <h1>Техника для<br>твоего <span>будущего.</span></h1>
-        <p>Смартфоны, компьютеры и аксессуары в одном месте.</p>
-        <a href="#catalog" class="main-button">Смотреть каталог</a>
+  <!-- HERO -->
+  <main>
+    <section class="hero" id="home">
+      <div class="container">
+        <h1>Технологии будущего<br>уже здесь</h1>
+
+        <p>
+          Смартфоны, наушники, планшеты и аксессуары
+          в TECHSTORE.
+        </p>
+
+        <a href="#catalog" class="btn">
+          Перейти в каталог
+        </a>
       </div>
-      <div class="hero-decoration">TECH</div>
     </section>
 
-    <section class="catalog section" id="catalog">
-      <div class="section-heading">
-        <div>
-          <span class="small-label">НАШ АССОРТИМЕНТ</span>
-          <h2>Каталог товаров</h2>
-        </div>
-        <p>Выбирай то, что тебе нужно.</p>
-      </div>
+    <!-- CATALOG -->
+    <section class="catalog container" id="catalog">
 
-      <div class="catalog-tools">
+      <h2>Наш каталог</h2>
+
+      <div class="catalog-controls">
         <input
-          type="search"
-          id="search-input"
-          placeholder="🔎 Поиск товаров..."
-          aria-label="Поиск товаров"
+          type="text"
+          id="search"
+          placeholder="Поиск товаров..."
         >
 
-        <div class="category-filters" id="category-filters">
-          <button class="filter-button active" data-category="all">Все</button>
-          <button class="filter-button" data-category="smartphones">Смартфоны</button>
-          <button class="filter-button" data-category="computers">Компьютеры</button>
-          <button class="filter-button" data-category="accessories">Аксессуары</button>
-        </div>
+        <select id="category-filter">
+          <option value="">Все категории</option>
+          <option value="Смартфоны">Смартфоны</option>
+          <option value="Наушники">Наушники</option>
+          <option value="Планшеты">Планшеты</option>
+          <option value="Аксессуары">Аксессуары</option>
+        </select>
       </div>
 
-      <div class="product-grid" id="product-list"></div>
-      <p class="empty-message" id="empty-products" hidden>Товары не найдены.</p>
+      <div id="products" class="products">
+        <p>Загрузка товаров...</p>
+      </div>
+
     </section>
 
-    <section class="about section" id="about">
-      <span class="small-label">ПОЧЕМУ TECHSTORE?</span>
-      <h2>Технологии становятся ближе.</h2>
-      <div class="features">
-        <div class="feature">
-          <span>📱</span>
-          <h3>Современная техника</h3>
-          <p>Популярные устройства и полезные аксессуары.</p>
-        </div>
-        <div class="feature">
-          <span>🛒</span>
-          <h3>Удобный заказ</h3>
-          <p>Добавляй товары в корзину и оформляй заказ.</p>
-        </div>
-        <div class="feature">
-          <span>💬</span>
-          <h3>Связь в Telegram</h3>
-          <p>Обсуди свой заказ напрямую с продавцом.</p>
-        </div>
-      </div>
+    <!-- ABOUT -->
+    <section class="about container" id="about">
+      <h2>О TECHSTORE</h2>
+      <p>
+        TECHSTORE — магазин современной электроники.
+        Выбирай понравившиеся товары и оформляй заказ.
+      </p>
     </section>
   </main>
 
+  <!-- FOOTER -->
   <footer class="footer">
-    <a href="#" class="logo">TECH<span>STORE</span></a>
-    <p>© 2026 TECHSTORE. Демонстрационный интернет-магазин.</p>
+    <div class="container">
+      <p>© 2026 TECHSTORE. Все права защищены.</p>
+      <p>Связь: @ww1nterc</p>
+    </div>
   </footer>
 
-  <!-- Корзина -->
-  <div class="overlay" id="cart-overlay">
-    <div class="modal cart-modal">
-      <button class="close-button" id="close-cart" aria-label="Закрыть">×</button>
-      <h2>Твоя корзина</h2>
-      <div id="cart-items"></div>
+  <!-- AUTH MODAL -->
+  <div class="modal" id="auth-modal">
+    <div class="modal-content">
 
-      <div class="cart-bottom">
-        <div class="total-row">
-          <span>Итого:</span>
-          <strong id="cart-total">0 сум</strong>
-        </div>
-        <button class="main-button full-button" id="checkout-button">
-          Оформить заказ
+      <button class="modal-close" data-close>×</button>
+
+      <h2 id="auth-title">Вход</h2>
+
+      <form id="auth-form">
+
+        <input
+          type="text"
+          id="auth-name"
+          placeholder="Ваше имя"
+          style="display:none"
+        >
+
+        <input
+          type="email"
+          id="auth-email"
+          placeholder="Email"
+          required
+        >
+
+        <input
+          type="password"
+          id="auth-password"
+          placeholder="Пароль"
+          minlength="6"
+          required
+        >
+
+        <button type="submit" id="auth-submit" class="btn">
+          Войти
         </button>
-      </div>
+
+      </form>
+
+      <button id="auth-switch" class="text-btn">
+        Нет аккаунта? Регистрация
+      </button>
+
+      <p id="auth-message"></p>
+
     </div>
   </div>
 
-  <!-- Оформление заказа -->
-  <div class="overlay" id="checkout-overlay">
-    <div class="modal checkout-modal">
-      <button class="close-button" id="close-checkout" aria-label="Закрыть">×</button>
-      <span class="small-label">ПОСЛЕДНИЙ ШАГ</span>
+  <!-- CART MODAL -->
+  <div class="modal" id="cart-modal">
+    <div class="modal-content">
+
+      <button class="modal-close" data-close>×</button>
+
+      <h2>Корзина</h2>
+
+      <div id="cart-items">
+        <p>Корзина пуста.</p>
+      </div>
+
+      <h3>
+        Итого:
+        <span id="cart-total">0 сум</span>
+      </h3>
+
+      <button id="checkout-btn" class="btn">
+        Оформить заказ
+      </button>
+
+    </div>
+  </div>
+
+  <!-- CHECKOUT MODAL -->
+  <div class="modal" id="checkout-modal">
+    <div class="modal-content">
+
+      <button class="modal-close" data-close>×</button>
+
       <h2>Оформление заказа</h2>
-      <p class="modal-description">Заполни данные для связи и доставки.</p>
 
       <form id="checkout-form">
-        <label for="customer-name">Твоё имя</label>
-        <input id="customer-name" name="name" type="text" placeholder="Например, Алекс" required minlength="2">
 
-        <label for="customer-phone">Номер телефона</label>
-        <input id="customer-phone" name="phone" type="tel" placeholder="+998 90 123 45 67" required>
+        <input
+          type="text"
+          id="customer-name"
+          placeholder="Ваше имя"
+          required
+        >
 
-        <label for="customer-address">Адрес доставки</label>
-        <textarea id="customer-address" name="address" placeholder="Город, улица, дом..." required></textarea>
+        <input
+          type="tel"
+          id="customer-phone"
+          placeholder="Номер телефона"
+          required
+        >
 
-        <label for="customer-comment">Комментарий (необязательно)</label>
-        <textarea id="customer-comment" name="comment" placeholder="Дополнительная информация"></textarea>
+        <input
+          type="text"
+          id="customer-address"
+          placeholder="Адрес доставки"
+        >
 
-        <div class="checkout-total">
-          <span>Сумма заказа:</span>
-          <strong id="checkout-total">0 сум</strong>
-        </div>
-
-        <button type="submit" class="main-button full-button">
-          Перейти в Telegram
+        <button type="submit" class="btn">
+          Подтвердить заказ
         </button>
+
       </form>
+
+      <p id="checkout-message"></p>
+
     </div>
   </div>
 
+  <!-- FAVORITES MODAL -->
+  <div class="modal" id="favorites-modal">
+    <div class="modal-content">
+
+      <button class="modal-close" data-close>×</button>
+
+      <h2>Избранное</h2>
+
+      <div id="favorites-items">
+        <p>Избранное пусто.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ADMIN MODAL -->
+  <div class="modal" id="admin-modal">
+    <div class="modal-content">
+
+      <button class="modal-close" data-close>×</button>
+
+      <h2>Админ-панель</h2>
+
+      <p>Добавление нового товара</p>
+
+      <form id="product-form">
+
+        <input
+          type="text"
+          id="new-name"
+          placeholder="Название товара"
+          required
+        >
+
+        <input
+          type="number"
+          id="new-price"
+          placeholder="Цена в сумах"
+          min="1"
+          required
+        >
+
+        <select id="new-category" required>
+          <option value="">Выбери категорию</option>
+          <option value="Смартфоны">Смартфоны</option>
+          <option value="Наушники">Наушники</option>
+          <option value="Планшеты">Планшеты</option>
+          <option value="Аксессуары">Аксессуары</option>
+        </select>
+
+        <input
+          type="url"
+          id="new-image"
+          placeholder="Ссылка на фотографию"
+          required
+        >
+
+        <textarea
+          id="new-description"
+          placeholder="Описание товара"
+        ></textarea>
+
+        <button type="submit" class="btn">
+          Добавить товар
+        </button>
+
+      </form>
+
+      <p id="admin-message"></p>
+
+      <h3>Управление товарами</h3>
+
+      <div id="admin-products"></div>
+
+    </div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
+
 </body>
 </html>
