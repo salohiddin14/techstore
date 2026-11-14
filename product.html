@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -8,17 +7,24 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="header">
-  <a class="logo" href="index.html">TECH<span>STORE</span></a>
-  <a href="index.html#catalog">← Вернуться в каталог</a>
-  <button id="cart-button" class="small-btn">Корзина <span id="cart-count">0</span></button>
-</header>
+  <header class="header">
+    <a class="logo" href="index.html">TECH<span>STORE</span></a>
+    <div class="header-actions">
+      <a href="index.html#catalog">← В каталог</a>
+      <button id="login-btn">Войти</button>
+      <button id="cart-btn">Корзина <span id="cart-count">0</span></button>
+    </div>
+  </header>
 
-<main class="section">
-  <div id="product-detail" class="product-detail"></div>
-</main>
+  <main class="section">
+    <div id="product-detail">
+      <p class="muted">Загружаем товар...</p>
+    </div>
+  </main>
 
-<footer>© 2026 TECHSTORE</footer>
-<script src="script.js"></script>
+  <footer>© 2026 TECHSTORE</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
 </body>
 </html>
